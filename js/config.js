@@ -13,5 +13,5 @@
    own branch-password system.
    ============================================================ */
 
-window.SUPABASE_URL      = 'https://YOUR_PROJECT_ID.supabase.co';
-window.SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY_HERE';
+window.SUPABASE_URL      = 'https://syalubccxqpyyzlymbew.supabase.co/rest/v1/';
+window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5YWx1YmNjeHFweXl6bHltYmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzOTgxMzgsImV4cCI6MjA5Mzk3NDEzOH0.dlwzCDPCd_maAOPwce0JKAK7Qj6YTvSq5eGkQKSlWZE';
