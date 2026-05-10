@@ -162,8 +162,8 @@ const Rec = (() => {
       _showEndSummary(summary);
       _session = null;
       _resetCounters();
-      $('recSessionPanel').style.display = 'none';
-      $('recSetupPanel').style.display   = 'block';
+      $('attSessionPanel').style.display = 'none';
+      $('attSetupPanel').style.display   = 'block';
       $('btnEndSession').style.display   = 'none';
     } catch (err) {
       toast('Error ending session: ' + err.message, 'error');
