@@ -3,15 +3,221 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FaceTrack Pro — Smart Attendance</title>
+  <title>Face Track — Smart Attendance</title>
   <link rel="stylesheet" href="css/main.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+  <style>
+    /* ── LANDING PAGE ───────────────────────────────── */
+    #landingScreen {
+      position: fixed; inset: 0; z-index: 10000;
+      background: #08090d;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      transition: opacity 0.6s ease;
+    }
+    #landingScreen.fade-out { opacity: 0; pointer-events: none; }
+
+    .land-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,.07) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridDrift 20s linear infinite;
+    }
+    @keyframes gridDrift {
+      from { background-position: 0 0; }
+      to   { background-position: 48px 48px; }
+    }
+
+    .land-glow-1 {
+      position: absolute; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,.18) 0%, transparent 70%);
+      top: -150px; left: -100px; animation: blobFloat 8s ease-in-out infinite;
+    }
+    .land-glow-2 {
+      position: absolute; width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(34,197,94,.12) 0%, transparent 70%);
+      bottom: -100px; right: -80px; animation: blobFloat 10s ease-in-out infinite reverse;
+    }
+    @keyframes blobFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50%      { transform: translate(30px,-30px) scale(1.08); }
+    }
+
+    .land-scan-ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(99,102,241,.2);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+      animation: ringPulse 3s ease-in-out infinite;
+    }
+    .land-scan-ring:nth-child(3) { width:340px; height:340px; }
+    .land-scan-ring:nth-child(4) { width:500px; height:500px; animation-delay:.7s; border-color:rgba(99,102,241,.1); }
+    .land-scan-ring:nth-child(5) { width:660px; height:660px; animation-delay:1.4s; border-color:rgba(99,102,241,.05); }
+    @keyframes ringPulse {
+      0%,100% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+      50%      { opacity:.3; transform:translate(-50%,-50%) scale(1.04); }
+    }
+
+    .land-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 0 24px; max-width: 680px;
+    }
+
+    .land-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 14px; border-radius: 20px;
+      border: 1px solid rgba(99,102,241,.35);
+      background: rgba(99,102,241,.1);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .63rem; letter-spacing: .14em;
+      color: #a5b4fc; text-transform: uppercase;
+      margin-bottom: 28px;
+      animation: fadeSlideUp .6s ease both;
+    }
+    .land-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #22c55e; box-shadow: 0 0 6px #22c55e;
+      animation: blink 1.5s infinite;
+    }
+
+    .land-logo-wrap {
+      margin-bottom: 20px;
+      animation: fadeSlideUp .6s .1s ease both;
+    }
+    .land-logo-box {
+      width: 72px; height: 72px;
+      background: rgba(99,102,241,.12);
+      border: 1px solid rgba(99,102,241,.28);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+    }
+
+    .land-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.8rem, 9vw, 5.5rem);
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: .92;
+      margin-bottom: 18px;
+      animation: fadeSlideUp .6s .2s ease both;
+    }
+    .land-title .t-accent { color: #6366f1; }
+    .land-title .t-green  { color: #22c55e; }
+
+    .land-sub {
+      font-size: 1rem; color: #7070a0; line-height: 1.75;
+      max-width: 440px; margin-bottom: 36px;
+      animation: fadeSlideUp .6s .3s ease both;
+    }
+
+    .land-pills {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 40px;
+      animation: fadeSlideUp .6s .4s ease both;
+    }
+    .land-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 13px; border-radius: 8px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      font-size: .75rem; color: #9090b8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .land-cta {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 15px 34px; border-radius: 12px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #6366f1, #4f52d4);
+      color: #fff; font-family: 'Syne', sans-serif;
+      font-size: .95rem; font-weight: 700; letter-spacing: .02em;
+      box-shadow: 0 8px 32px rgba(99,102,241,.4);
+      transition: transform .2s, box-shadow .2s;
+      animation: fadeSlideUp .6s .5s ease both;
+    }
+    .land-cta:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(99,102,241,.55); }
+    .land-cta:active { transform: translateY(-1px); }
+    .land-arrow { transition: transform .2s; }
+    .land-cta:hover .land-arrow { transform: translateX(5px); }
+
+    .land-footer {
+      position: absolute; bottom: 22px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem; color: #2a2a48; letter-spacing: .12em;
+      animation: fadeSlideUp .6s .7s ease both;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
 
-<!-- BOOT -->
-<div id="bootScreen">
+<!-- ══════════════ LANDING PAGE ══════════════ -->
+<div id="landingScreen">
+  <div class="land-grid"></div>
+  <div class="land-glow-1"></div>
+  <div class="land-glow-2"></div>
+  <div class="land-scan-ring"></div>
+  <div class="land-scan-ring"></div>
+  <div class="land-scan-ring"></div>
+
+  <div class="land-content">
+    <div class="land-badge">
+      <div class="land-badge-dot"></div>
+      AI-Powered · Real-Time · Cloud-Synced
+    </div>
+
+    <div class="land-logo-wrap">
+      <div class="land-logo-box">
+        <svg viewBox="0 0 48 48" fill="none" width="38" height="38">
+          <rect x="4" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+          <rect x="28" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+          <rect x="4" y="28" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+          <circle cx="12" cy="12" r="3.5" fill="#6366f1"/>
+          <circle cx="36" cy="12" r="3.5" fill="#6366f1"/>
+          <circle cx="12" cy="36" r="3.5" fill="#6366f1"/>
+          <path d="M28 36 Q36 28 44 36" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="36" cy="36" r="3.5" fill="#22c55e"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="land-title">
+      <span class="t-accent">Face</span> Track
+    </div>
+
+    <p class="land-sub">
+      Intelligent face recognition attendance system. Register once,
+      mark attendance automatically — across any device, from anywhere.
+    </p>
+
+    <div class="land-pills">
+      <div class="land-pill">⚡ Instant Recognition</div>
+      <div class="land-pill">☁️ Cloud Database</div>
+      <div class="land-pill">🔐 Branch Security</div>
+      <div class="land-pill">📊 Live Reports</div>
+      <div class="land-pill">📷 Auto Mark Present</div>
+    </div>
+
+    <button class="land-cta" onclick="launchApp()">
+      Launch System <span class="land-arrow">→</span>
+    </button>
+  </div>
+
+  <div class="land-footer">FACE TRACK · AI ATTENDANCE SYSTEM</div>
+</div>
+
+<!-- ══════════════ BOOT SCREEN ══════════════ -->
+<div id="bootScreen" style="display:none">
   <div class="boot-inner">
     <div class="boot-logo">
       <svg viewBox="0 0 48 48" fill="none" width="56" height="56">
@@ -25,7 +231,7 @@
         <circle cx="36" cy="36" r="3.5" fill="#22c55e"/>
       </svg>
     </div>
-    <h1>FaceTrack <span>Pro</span></h1>
+    <h1>Face <span>Track</span></h1>
     <p>AI-Powered Smart Attendance System</p>
     <div class="boot-steps">
       <div class="boot-step" id="bs1"><div class="bs-dot"></div><span>Initializing Database…</span></div>
@@ -110,7 +316,7 @@
   </div>
 </div>
 
-<!-- CONFIRM WITH PASSWORD MODAL (delete student / delete session) -->
+<!-- CONFIRM WITH PASSWORD MODAL -->
 <div id="confirmModal" class="modal-backdrop" style="display:none">
   <div class="modal-box">
     <button id="confirmModalClose" class="modal-close">✕</button>
@@ -138,7 +344,7 @@
       <path d="M21 27.5 Q27.5 21 34 27.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" fill="none"/>
       <circle cx="27.5" cy="27.5" r="2.5" fill="#22c55e"/>
     </svg>
-    <div class="logo-text"><span class="logo-name">FaceTrack</span><span class="logo-badge">PRO</span></div>
+    <div class="logo-text"><span class="logo-name">Face Track</span></div>
   </div>
 
   <nav class="nav-group">
@@ -160,8 +366,6 @@
       Register Student
     </button>
   </nav>
-
-
 
   <nav class="nav-group">
     <div class="nav-label">SYSTEM</div>
@@ -198,8 +402,6 @@
     <div><h2>Mark Attendance</h2><p class="page-sub">Select session details — camera auto-marks students continuously</p></div>
     <button class="btn orange" id="btnEndSession" onclick="AttendPage.endSession()" style="display:none">⏹ End Session</button>
   </div>
-
-  <!-- SETUP PANEL -->
   <div id="attSetupPanel">
     <div class="two-col" style="max-width:700px">
       <div class="card">
@@ -207,15 +409,11 @@
         <div class="form-body">
           <div class="fgroup" style="margin-bottom:12px">
             <label>Branch <span class="req">*</span></label>
-            <select id="attBranch" onchange="AttendPage.branchChanged()">
-              <option value="">— Select Branch —</option>
-            </select>
+            <select id="attBranch" onchange="AttendPage.branchChanged()"><option value="">— Select Branch —</option></select>
           </div>
           <div class="fgroup" style="margin-bottom:12px">
             <label>Semester <span class="req">*</span></label>
-            <select id="attSemester">
-              <option value="">— Semester —</option>
-            </select>
+            <select id="attSemester"><option value="">— Semester —</option></select>
           </div>
           <div class="fgroup" style="margin-bottom:12px">
             <label>Subject / Class Name <span class="req">*</span></label>
@@ -243,8 +441,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ACTIVE SESSION PANEL -->
   <div id="attSessionPanel" style="display:none">
     <div class="session-active-bar">
       <div class="sab-info">
@@ -256,9 +452,7 @@
         <span>Started <strong id="attActiveStart"></strong></span>
       </div>
     </div>
-
     <div class="rec-layout">
-      <!-- Camera -->
       <div class="card">
         <div class="card-head">
           <span class="ctitle">Live Recognition Feed</span>
@@ -286,8 +480,6 @@
           <div class="sum-pill orange">? Unknown: <strong id="sumUnknown">0</strong></div>
         </div>
       </div>
-
-      <!-- Feed -->
       <div class="card">
         <div class="card-head">
           <span class="ctitle">Recognition Results</span>
@@ -345,32 +537,29 @@
           <div class="fgroup"><label>Roll / Enrollment No. <span class="req">*</span></label><input id="rId" type="text" placeholder="e.g. 21CE001"/></div>
         </div>
         <div class="fgroup" style="margin-bottom:12px">
-            <label>Branch <span class="req">*</span></label>
-            <select id="rBranch">
-              <option value="">— Select Branch —</option>
-              <option>Computer Engineering</option><option>Information Technology</option>
-              <option>Electronics &amp; Telecommunication</option><option>Electrical Engineering</option>
-              <option>Mechanical Engineering</option><option>Civil Engineering</option>
-              <option>Chemical Engineering</option><option>Artificial Intelligence &amp; Data Science</option>
-              <option>Automobile Engineering</option><option>Other</option>
+          <label>Branch <span class="req">*</span></label>
+          <select id="rBranch">
+            <option value="">— Select Branch —</option>
+            <option>Computer Engineering</option><option>Information Technology</option>
+            <option>Electronics &amp; Telecommunication</option><option>Electrical Engineering</option>
+            <option>Mechanical Engineering</option><option>Civil Engineering</option>
+            <option>Chemical Engineering</option><option>Artificial Intelligence &amp; Data Science</option>
+            <option>Automobile Engineering</option><option>Other</option>
+          </select>
+        </div>
+        <div class="frow">
+          <div class="fgroup">
+            <label>Semester <span class="req">*</span></label>
+            <select id="rSemester">
+              <option value="">— Semester —</option>
+              <option value="1">Semester 1</option><option value="2">Semester 2</option>
+              <option value="3">Semester 3</option><option value="4">Semester 4</option>
+              <option value="5">Semester 5</option><option value="6">Semester 6</option>
+              <option value="7">Semester 7</option><option value="8">Semester 8</option>
             </select>
           </div>
-          <div class="frow">
-            <div class="fgroup">
-              <label>Semester <span class="req">*</span></label>
-              <select id="rSemester">
-                <option value="">— Semester —</option>
-                <option value="1">Semester 1</option><option value="2">Semester 2</option>
-                <option value="3">Semester 3</option><option value="4">Semester 4</option>
-                <option value="5">Semester 5</option><option value="6">Semester 6</option>
-                <option value="7">Semester 7</option><option value="8">Semester 8</option>
-              </select>
-            </div>
-            <div class="fgroup">
-              <label>Division / Section <span class="opt">(optional)</span></label>
-              <input id="rSection" type="text" placeholder="e.g. A, B, C"/>
-            </div>
-          </div>
+          <div class="fgroup"><label>Division / Section <span class="opt">(optional)</span></label><input id="rSection" type="text" placeholder="e.g. A, B, C"/></div>
+        </div>
         <div class="frow">
           <div class="fgroup"><label>Email</label><input id="rEmail" type="email" placeholder="student@college.edu"/></div>
           <div class="fgroup"><label>Phone</label><input id="rPhone" type="tel" placeholder="+91 9876543210"/></div>
@@ -391,30 +580,19 @@
   <div class="page-head">
     <div><h2 id="portalBranchTitle">Branch Portal</h2><p class="page-sub" id="portalBranchName"></p></div>
     <div style="display:flex;gap:10px;align-items:center">
-      <select id="portalSemesterFilter" class="finput" onchange="BranchPortal.filterChanged()">
-        <option value="">All Semesters</option>
-      </select>
+      <select id="portalSemesterFilter" class="finput" onchange="BranchPortal.filterChanged()"><option value="">All Semesters</option></select>
       <button class="btn sm danger" onclick="BranchPortal.logout()">🔓 Logout</button>
       <button class="btn sm outline" onclick="exportCSV()">⬇ CSV</button>
     </div>
   </div>
-
   <div class="portal-tabs-bar">
-    <button class="portal-tab-btn active" data-tab="sessions" onclick="BranchPortal.showTab('sessions')">
-      📋 Sessions &amp; Attendance
-    </button>
-    <button class="portal-tab-btn" data-tab="students" onclick="BranchPortal.showTab('students')">
-      👥 Students
-    </button>
+    <button class="portal-tab-btn active" data-tab="sessions" onclick="BranchPortal.showTab('sessions')">📋 Sessions &amp; Attendance</button>
+    <button class="portal-tab-btn" data-tab="students" onclick="BranchPortal.showTab('students')">👥 Students</button>
   </div>
-
-  <!-- Sessions tab -->
   <div id="portalSessions">
     <div id="portalSessionList"><p class="empty">Loading…</p></div>
     <div id="portalSessionDetail" style="display:none"></div>
   </div>
-
-  <!-- Students tab -->
   <div id="portalStudents" style="display:none">
     <div id="portalStudentList"><p class="empty">Loading…</p></div>
   </div>
@@ -489,5 +667,19 @@
 <script src="js/recognize.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/app.js"></script>
+
+<script>
+  // Called when user clicks "Launch System" on landing page
+  function launchApp() {
+    const landing = document.getElementById('landingScreen');
+    const boot    = document.getElementById('bootScreen');
+    landing.classList.add('fade-out');
+    setTimeout(() => {
+      landing.style.display = 'none';
+      boot.style.display    = 'flex';
+      window._bootReady && window._bootReady();
+    }, 600);
+  }
+</script>
 </body>
 </html>
