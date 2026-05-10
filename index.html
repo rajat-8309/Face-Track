@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FaceTrack Pro — Smart Attendance</title>
+  <link rel="stylesheet" href="css/main.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+</head>
+<body>
+
+<!-- BOOT -->
+<div id="bootScreen">
+  <div class="boot-inner">
+    <div class="boot-logo">
+      <svg viewBox="0 0 48 48" fill="none" width="56" height="56">
+        <rect x="4" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+        <rect x="28" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+        <rect x="4" y="28" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+        <circle cx="12" cy="12" r="3.5" fill="#6366f1"/>
+        <circle cx="36" cy="12" r="3.5" fill="#6366f1"/>
+        <circle cx="12" cy="36" r="3.5" fill="#6366f1"/>
+        <path d="M28 36 Q36 28 44 36" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="36" cy="36" r="3.5" fill="#22c55e"/>
+      </svg>
+    </div>
+    <h1>FaceTrack <span>Pro</span></h1>
+    <p>AI-Powered Smart Attendance System</p>
+    <div class="boot-steps">
+      <div class="boot-step" id="bs1"><div class="bs-dot"></div><span>Initializing Database…</span></div>
+      <div class="boot-step" id="bs2"><div class="bs-dot"></div><span>Loading Face Detection Models…</span></div>
+      <div class="boot-step" id="bs3"><div class="bs-dot"></div><span>Building Recognition Engine…</span></div>
+    </div>
+    <div class="boot-bar"><div class="boot-progress" id="bootProgress"></div></div>
+    <div id="bootError" class="boot-error" style="display:none"></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="authModal" class="modal-backdrop" style="display:none">
+  <div class="modal-box">
+    <button id="authModalClose" class="modal-close">✕</button>
+    <div class="modal-icon">🔐</div>
+    <h3 id="authModalTitle" class="modal-title">Branch Login</h3>
+    <p class="modal-sub">Enter the password to access this branch's data.</p>
+    <input type="password" id="authModalPass" class="modal-input" placeholder="Branch password…" autocomplete="off"/>
+    <div id="authModalErr" class="modal-err"></div>
+    <button id="authModalSubmit" class="btn accent" style="width:100%;margin-top:8px">Login</button>
+  </div>
+</div>
+
+<!-- STUDENT DETAIL MODAL -->
+<div id="stuDetailModal" class="modal-backdrop" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="width:500px;max-width:95vw;max-height:85vh;overflow-y:auto;text-align:left;padding:0">
+    <div id="stuDetailContent"></div>
+  </div>
+</div>
+
+<!-- EDIT STUDENT MODAL -->
+<div id="editStudentModal" class="modal-backdrop" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;text-align:left">
+    <button class="modal-close" onclick="document.getElementById('editStudentModal').style.display='none'">✕</button>
+    <div style="font-size:1.05rem;font-weight:700;margin-bottom:16px">✏️ Edit Student</div>
+    <input type="hidden" id="editStudentDbId"/>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="fgroup"><label>Full Name <span class="req">*</span></label><input id="editName" type="text"/></div>
+      <div class="fgroup"><label>Roll / Enrollment No. <span class="req">*</span></label><input id="editId" type="text"/></div>
+    </div>
+    <div class="fgroup" style="margin-bottom:12px">
+      <label>Branch <span class="req">*</span></label>
+      <select id="editBranch">
+        <option value="">— Select Branch —</option>
+        <option>Computer Engineering</option><option>Information Technology</option>
+        <option>Electronics &amp; Telecommunication</option><option>Electrical Engineering</option>
+        <option>Mechanical Engineering</option><option>Civil Engineering</option>
+        <option>Chemical Engineering</option><option>Artificial Intelligence &amp; Data Science</option>
+        <option>Automobile Engineering</option><option>Other</option>
+      </select>
+    </div>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="fgroup">
+        <label>Semester <span class="req">*</span></label>
+        <select id="editSemester">
+          <option value="">— Semester —</option>
+          <option value="1">Semester 1</option><option value="2">Semester 2</option>
+          <option value="3">Semester 3</option><option value="4">Semester 4</option>
+          <option value="5">Semester 5</option><option value="6">Semester 6</option>
+          <option value="7">Semester 7</option><option value="8">Semester 8</option>
+        </select>
+      </div>
+      <div class="fgroup"><label>Division / Section <span class="opt">(optional)</span></label><input id="editSection" type="text"/></div>
+    </div>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="fgroup"><label>Email</label><input id="editEmail" type="email"/></div>
+      <div class="fgroup"><label>Phone</label><input id="editPhone" type="tel"/></div>
+    </div>
+    <div class="fgroup" style="margin-bottom:14px">
+      <label>Guardian Contact</label><input id="editGuardian" type="tel"/>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;margin-bottom:10px">
+      <label style="display:block;margin-bottom:6px">Branch Password <span class="req">*</span> <span class="opt">(required to save changes)</span></label>
+      <input id="editAuthPass" type="password" class="modal-input" style="text-align:left" placeholder="Enter branch password to confirm changes"/>
+    </div>
+    <div id="editBanner" class="banner" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn accent" id="btnEditSave" onclick="StudentsPage.saveEdit()">Save Changes</button>
+      <button class="btn ghost" onclick="document.getElementById('editStudentModal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM WITH PASSWORD MODAL (delete student / delete session) -->
+<div id="confirmModal" class="modal-backdrop" style="display:none">
+  <div class="modal-box">
+    <button id="confirmModalClose" class="modal-close">✕</button>
+    <div class="modal-icon" id="confirmModalIcon">⚠️</div>
+    <h3 id="confirmModalTitle" class="modal-title">Confirm</h3>
+    <p id="confirmModalMsg" class="modal-sub"></p>
+    <input type="password" id="confirmModalPass" class="modal-input" placeholder="Branch password…" autocomplete="off"/>
+    <div id="confirmModalErr" class="modal-err"></div>
+    <button id="confirmModalSubmit" class="btn danger" style="width:100%;margin-top:8px">Confirm</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <svg viewBox="0 0 36 36" fill="none" width="28" height="28">
+      <rect x="2" y="2" width="13" height="13" rx="2.5" stroke="#6366f1" stroke-width="2"/>
+      <rect x="21" y="2" width="13" height="13" rx="2.5" stroke="#6366f1" stroke-width="2"/>
+      <rect x="2" y="21" width="13" height="13" rx="2.5" stroke="#6366f1" stroke-width="2"/>
+      <circle cx="8.5" cy="8.5" r="2.5" fill="#6366f1"/>
+      <circle cx="27.5" cy="8.5" r="2.5" fill="#6366f1"/>
+      <circle cx="8.5" cy="27.5" r="2.5" fill="#6366f1"/>
+      <path d="M21 27.5 Q27.5 21 34 27.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <circle cx="27.5" cy="27.5" r="2.5" fill="#22c55e"/>
+    </svg>
+    <div class="logo-text"><span class="logo-name">FaceTrack</span><span class="logo-badge">PRO</span></div>
+  </div>
+
+  <nav class="nav-group">
+    <div class="nav-label">OVERVIEW</div>
+    <button class="nav-btn active" data-page="dashboard">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/></svg>
+      Dashboard
+    </button>
+  </nav>
+
+  <nav class="nav-group">
+    <div class="nav-label">ATTENDANCE</div>
+    <button class="nav-btn" data-page="attend">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+      Mark Attendance
+    </button>
+    <button class="nav-btn" data-page="register">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/></svg>
+      Register Student
+    </button>
+  </nav>
+
+  <nav class="nav-group">
+    <div class="nav-label">RECORDS</div>
+    <button class="nav-btn" data-page="portal">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+      Branch Portal
+    </button>
+    <button class="nav-btn" data-page="students">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg>
+      Students
+    </button>
+  </nav>
+
+  <nav class="nav-group">
+    <div class="nav-label">SYSTEM</div>
+    <button class="nav-btn" data-page="settings">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sys-status">
+      <div class="sys-row"><div class="dot" id="dotDB"></div><span id="lblDB">DB</span></div>
+      <div class="sys-row"><div class="dot" id="dotAI"></div><span id="lblAI">AI Models</span></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-head">
+    <div><h2>Dashboard</h2><p class="page-sub" id="clockLine"></p></div>
+    <button class="btn sm outline" onclick="goPage('attend')">+ Mark Attendance</button>
+  </div>
+  <p class="hint" style="margin-bottom:18px">Click a branch card to view attendance records. Branch data is password-protected.</p>
+  <div id="branchGrid" class="branch-grid"></div>
+</div>
+
+<!-- MARK ATTENDANCE -->
+<div class="page" id="page-attend">
+  <div class="page-head">
+    <div><h2>Mark Attendance</h2><p class="page-sub">Select session details — camera auto-marks students continuously</p></div>
+    <button class="btn orange" id="btnEndSession" onclick="AttendPage.endSession()" style="display:none">⏹ End Session</button>
+  </div>
+
+  <!-- SETUP PANEL -->
+  <div id="attSetupPanel">
+    <div class="two-col" style="max-width:700px">
+      <div class="card">
+        <div class="card-head"><span class="ctitle">Session Details</span></div>
+        <div class="form-body">
+          <div class="fgroup" style="margin-bottom:12px">
+            <label>Branch <span class="req">*</span></label>
+            <select id="attBranch" onchange="AttendPage.branchChanged()">
+              <option value="">— Select Branch —</option>
+            </select>
+          </div>
+          <div class="fgroup" style="margin-bottom:12px">
+            <label>Semester <span class="req">*</span></label>
+            <select id="attSemester">
+              <option value="">— Semester —</option>
+            </select>
+          </div>
+          <div class="fgroup" style="margin-bottom:12px">
+            <label>Subject / Class Name <span class="req">*</span></label>
+            <input id="attSubject" type="text" placeholder="e.g. Data Structures, Lab 3, Tutorial"/>
+          </div>
+          <div class="fgroup" style="margin-bottom:12px">
+            <label>Scheduled Time Slot <span class="opt">(optional)</span></label>
+            <input id="attTimeSlot" type="text" placeholder="e.g. 09:00 – 10:00 AM"/>
+            <p class="hint" style="margin-top:4px">Helps tell apart two classes of the same subject on the same day.</p>
+          </div>
+        </div>
+        <div class="form-foot">
+          <button class="btn accent lg" id="btnStartSession" onclick="AttendPage.startSession()">▶ Start Session</button>
+        </div>
+        <div id="attBanner" class="banner" style="display:none;margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="ctitle">How It Works</span></div>
+        <div class="how-steps">
+          <div class="how-step"><div class="how-num">1</div><div><strong>Select branch, semester &amp; subject</strong><p>Choose the class you are taking attendance for.</p></div></div>
+          <div class="how-step"><div class="how-num">2</div><div><strong>Camera starts automatically</strong><p>The system scans for faces every 1.5 seconds — no manual action needed.</p></div></div>
+          <div class="how-step"><div class="how-num">3</div><div><strong>Present marked in real-time</strong><p>Each recognised student is instantly marked Present. Unknown faces are logged.</p></div></div>
+          <div class="how-step"><div class="how-num">4</div><div><strong>End session to mark absent</strong><p>When done, click End Session. All students not seen are auto-marked Absent.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE SESSION PANEL -->
+  <div id="attSessionPanel" style="display:none">
+    <div class="session-active-bar">
+      <div class="sab-info">
+        <span class="sab-dot">●</span>
+        <strong id="attActiveSubject">Subject</strong>
+        <span id="attActiveBranch" class="sab-branch"></span>
+        <span id="attActiveSemester" class="sab-sem"></span>
+        <span class="sab-sep">·</span>
+        <span>Started <strong id="attActiveStart"></strong></span>
+      </div>
+    </div>
+
+    <div class="rec-layout">
+      <!-- Camera -->
+      <div class="card">
+        <div class="card-head">
+          <span class="ctitle">Live Recognition Feed</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="dot" id="recStatusDot" style="background:var(--text-dim)"></div>
+            <span id="recStatusText" style="font-size:.72rem;color:var(--text-muted)">IDLE</span>
+          </div>
+        </div>
+        <div class="cam-wrap xl">
+          <video id="recVideo" autoplay playsinline muted></video>
+          <canvas id="recCanvas"></canvas>
+          <div class="cam-ui">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+            <div class="scan-line active" id="recScan"></div>
+            <div class="cam-tag" id="recTag">CAMERA OFF</div>
+          </div>
+          <div class="rec-overlay" id="recOverlay" style="display:none">
+            <div class="rec-name" id="recName"></div>
+            <div class="rec-detail" id="recDetail"></div>
+          </div>
+        </div>
+        <div class="rec-summary">
+          <div class="sum-pill green">✓ Present: <strong id="sumPresent">0</strong></div>
+          <div class="sum-pill orange">? Unknown: <strong id="sumUnknown">0</strong></div>
+        </div>
+      </div>
+
+      <!-- Feed -->
+      <div class="card">
+        <div class="card-head">
+          <span class="ctitle">Recognition Results</span>
+          <button class="btn xs ghost" onclick="Rec.clearFeed()">Clear</button>
+        </div>
+        <div id="recFeed"><p class="empty">Faces will appear here as they are recognised.</p></div>
+        <div id="recEndSummary" style="display:none;margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER STUDENT -->
+<div class="page" id="page-register">
+  <div class="page-head">
+    <div><h2>Register Student</h2><p class="page-sub">Branch &amp; semester are locked at registration</p></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><span class="ctitle">Face Capture</span><span class="hint-pill">3–5 photos recommended</span></div>
+      <p class="hint">Capture from slight different angles for best recognition accuracy.</p>
+      <div class="cam-wrap">
+        <video id="regVideo" autoplay playsinline muted></video>
+        <canvas id="regCanvas"></canvas>
+        <div class="cam-ui">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+          <div class="scan-line" id="regScan"></div>
+          <div class="cam-tag" id="regTag">CAMERA OFF</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn outline" onclick="Reg.startCam()">▶ Start Camera</button>
+        <button class="btn accent" id="btnCapture" onclick="Reg.capturePhoto()" disabled>◎ Capture</button>
+        <button class="btn ghost sm" onclick="Reg.stopCam()">■ Stop</button>
+      </div>
+      <div class="photo-row">
+        <div class="ph-slot" id="ph0"><span>1</span></div>
+        <div class="ph-slot" id="ph1"><span>2</span></div>
+        <div class="ph-slot" id="ph2"><span>3</span></div>
+        <div class="ph-slot" id="ph3"><span>4</span></div>
+        <div class="ph-slot" id="ph4"><span>5</span></div>
+      </div>
+      <div id="regFaceStatus" class="face-status"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="ctitle">Student Details</span></div>
+      <div class="isolation-notice">
+        <svg viewBox="0 0 16 16" fill="#6366f1" width="13"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+        Branch &amp; Semester are <strong>permanent</strong> — the student will only be recognised in sessions for their branch &amp; semester.
+      </div>
+      <div class="form-body">
+        <div class="frow">
+          <div class="fgroup"><label>Full Name <span class="req">*</span></label><input id="rName" type="text" placeholder="e.g. Rahul Sharma"/></div>
+          <div class="fgroup"><label>Roll / Enrollment No. <span class="req">*</span></label><input id="rId" type="text" placeholder="e.g. 21CE001"/></div>
+        </div>
+        <div class="fgroup" style="margin-bottom:12px">
+            <label>Branch <span class="req">*</span></label>
+            <select id="rBranch">
+              <option value="">— Select Branch —</option>
+              <option>Computer Engineering</option><option>Information Technology</option>
+              <option>Electronics &amp; Telecommunication</option><option>Electrical Engineering</option>
+              <option>Mechanical Engineering</option><option>Civil Engineering</option>
+              <option>Chemical Engineering</option><option>Artificial Intelligence &amp; Data Science</option>
+              <option>Automobile Engineering</option><option>Other</option>
+            </select>
+          </div>
+          <div class="frow">
+            <div class="fgroup">
+              <label>Semester <span class="req">*</span></label>
+              <select id="rSemester">
+                <option value="">— Semester —</option>
+                <option value="1">Semester 1</option><option value="2">Semester 2</option>
+                <option value="3">Semester 3</option><option value="4">Semester 4</option>
+                <option value="5">Semester 5</option><option value="6">Semester 6</option>
+                <option value="7">Semester 7</option><option value="8">Semester 8</option>
+              </select>
+            </div>
+            <div class="fgroup">
+              <label>Division / Section <span class="opt">(optional)</span></label>
+              <input id="rSection" type="text" placeholder="e.g. A, B, C"/>
+            </div>
+          </div>
+        <div class="frow">
+          <div class="fgroup"><label>Email</label><input id="rEmail" type="email" placeholder="student@college.edu"/></div>
+          <div class="fgroup"><label>Phone</label><input id="rPhone" type="tel" placeholder="+91 9876543210"/></div>
+        </div>
+        <div class="fgroup"><label>Guardian Contact</label><input id="rGuardian" type="tel" placeholder="+91 9876543210"/></div>
+      </div>
+      <div class="form-foot">
+        <button class="btn accent lg" id="btnRegSave" onclick="Reg.saveStudent()">Register Student</button>
+        <button class="btn ghost" onclick="Reg.clearForm()">Clear</button>
+      </div>
+      <div id="regBanner" class="banner" style="display:none;margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BRANCH PORTAL -->
+<div class="page" id="page-portal">
+  <div class="page-head">
+    <div><h2 id="portalBranchTitle">Branch Portal</h2><p class="page-sub" id="portalBranchName"></p></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select id="portalSemesterFilter" class="finput" onchange="BranchPortal.filterChanged()">
+        <option value="">All Semesters</option>
+      </select>
+      <button class="btn sm danger" onclick="BranchPortal.logout()">🔓 Logout</button>
+      <button class="btn sm outline" onclick="exportCSV()">⬇ CSV</button>
+    </div>
+  </div>
+
+  <div class="portal-tabs-bar">
+    <button class="portal-tab-btn active" data-tab="sessions" onclick="BranchPortal.showTab('sessions')">
+      📋 Sessions &amp; Attendance
+    </button>
+    <button class="portal-tab-btn" data-tab="students" onclick="BranchPortal.showTab('students')">
+      👥 Students
+    </button>
+  </div>
+
+  <!-- Sessions tab -->
+  <div id="portalSessions">
+    <div id="portalSessionList"><p class="empty">Loading…</p></div>
+    <div id="portalSessionDetail" style="display:none"></div>
+  </div>
+
+  <!-- Students tab -->
+  <div id="portalStudents" style="display:none">
+    <div id="portalStudentList"><p class="empty">Loading…</p></div>
+  </div>
+</div>
+
+<!-- STUDENTS PAGE -->
+<div class="page" id="page-students">
+  <div class="page-head">
+    <div><h2>Students</h2><p class="page-sub" id="studentsCount">0 students</p></div>
+    <div class="head-right">
+      <select id="studentBranchFilter" class="finput" onchange="StudentsPage.load()"><option value="">All Branches</option></select>
+      <select id="studentSemFilter" class="finput" onchange="StudentsPage.load()">
+        <option value="">All Sems</option>
+        <option value="1">Sem 1</option><option value="2">Sem 2</option><option value="3">Sem 3</option>
+        <option value="4">Sem 4</option><option value="5">Sem 5</option><option value="6">Sem 6</option>
+        <option value="7">Sem 7</option><option value="8">Sem 8</option>
+      </select>
+      <input type="text" id="studentSearch" class="finput" placeholder="Search…" oninput="StudentsPage.load()"/>
+      <button class="btn sm accent" onclick="goPage('register')">+ Register</button>
+    </div>
+  </div>
+  <div id="studentsGrid" class="student-grid"><p class="empty">No students registered.</p></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="page-head"><div><h2>Settings</h2><p class="page-sub">Branch passwords, recognition tuning, data management</p></div></div>
+  <div class="settings-wrap">
+    <div class="card">
+      <div class="card-head"><span class="ctitle">🔐 Branch Passwords</span></div>
+      <p class="hint">Set a password per branch. Branch heads can only access their own branch's attendance and student data.</p>
+      <div id="branchPasswordList" style="margin-top:12px"><p class="empty">No branches registered yet.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="ctitle">Face Recognition Tuning</span></div>
+      <div class="frow">
+        <div class="fgroup">
+          <label>Match Threshold — <span id="threshLabel">0.50</span></label>
+          <input type="range" id="threshRange" min="0.30" max="0.75" step="0.01" value="0.50" oninput="Settings.updateThresh(this.value)"/>
+          <p class="hint">Lower = stricter. Recommended: 0.42–0.55</p>
+        </div>
+        <div class="fgroup">
+          <label>Min Face Confidence — <span id="faceConfLabel">0.70</span></label>
+          <input type="range" id="faceConfRange" min="0.5" max="0.95" step="0.01" value="0.7" oninput="Settings.updateFaceConf(this.value)"/>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="ctitle">Data Management</span></div>
+      <div class="btn-row">
+        <button class="btn outline" onclick="Settings.exportBackup()">⬇ Backup JSON</button>
+        <button class="btn outline" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn outline" onclick="Settings.clearAttendance()">Clear Attendance</button>
+        <button class="btn danger"  onclick="Settings.wipeAll()">⚠ Wipe All Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/faceEngine.js"></script>
+<script src="js/session.js"></script>
+<script src="js/register.js"></script>
+<script src="js/recognize.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
