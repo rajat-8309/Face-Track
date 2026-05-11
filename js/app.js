@@ -1,12 +1,5 @@
 /* app.js — Boot, Navigation, Helpers */
-
-// Boot runs only after user clicks "Launch System" on the landing page.
-// The landing page calls window._bootReady() after its fade-out.
-document.addEventListener('DOMContentLoaded', () => {
-  window._bootReady = runBoot;
-});
-
-async function runBoot() {
+document.addEventListener('DOMContentLoaded', async () => {
   const boot = document.getElementById('bootScreen');
   const app  = document.getElementById('app');
   const step = (n, s) => { const e = document.getElementById('bs' + n); if (e) e.className = 'boot-step ' + s; };
@@ -38,7 +31,8 @@ async function runBoot() {
       app.style.display  = 'flex';
     }, 400);
 
-    await Dashboard.load();
+    // Show home page first
+    goPage('home');
     startClock();
   } catch (err) {
     step(1, ''); step(2, ''); step(3, '');
@@ -46,7 +40,7 @@ async function runBoot() {
     if (e) { e.style.display = 'block'; e.textContent = 'Boot failed: ' + err.message + '. Refresh to retry.'; }
     console.error('[Boot]', err);
   }
-}
+});
 
 function goPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -54,6 +48,7 @@ function goPage(name) {
   document.getElementById('page-' + name)?.classList.add('active');
   document.querySelector('[data-page="' + name + '"]')?.classList.add('active');
   const loads = {
+    home:      () => {},
     dashboard: () => Dashboard.load(),
     attend:    () => AttendPage.init(),
     register:  () => {},
@@ -89,7 +84,8 @@ function hideBanner(id) { const el = document.getElementById(id); if (el) el.sty
 
 function setBtnLoading(id, label) {
   const btn = document.getElementById(id); if (!btn) return;
-  btn.disabled = true; btn._orig = btn.innerHTML; btn.innerHTML = '<div class="spin"></div> ' + label;
+  btn.disabled = true; btn._orig = btn.innerHTML;
+  btn.innerHTML = '<div class="spin"></div> ' + label;
 }
 function setBtnDone(id) {
   const btn = document.getElementById(id); if (!btn) return;
@@ -97,7 +93,6 @@ function setBtnDone(id) {
 }
 
 function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
-
 function setTag(id, text, live) {
   const el = document.getElementById(id); if (!el) return;
   el.textContent = text; el.className = live ? 'cam-tag live' : 'cam-tag';
