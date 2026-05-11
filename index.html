@@ -9,215 +9,139 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
   <style>
-    /* ── LANDING PAGE ───────────────────────────────── */
-    #landingScreen {
-      position: fixed; inset: 0; z-index: 10000;
-      background: #08090d;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-      transition: opacity 0.6s ease;
+    /* ── HOME PAGE ─────────────────────────────────────── */
+    #page-home {
+      display: none;
+      min-height: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 28px;
     }
-    #landingScreen.fade-out { opacity: 0; pointer-events: none; }
+    #page-home.active { display: flex; }
 
-    .land-grid {
-      position: absolute; inset: 0; z-index: 0;
-      background-image:
-        linear-gradient(rgba(99,102,241,.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(99,102,241,.07) 1px, transparent 1px);
-      background-size: 48px 48px;
-      animation: gridDrift 20s linear infinite;
-    }
-    @keyframes gridDrift {
-      from { background-position: 0 0; }
-      to   { background-position: 48px 48px; }
-    }
-
-    .land-glow-1 {
-      position: absolute; width: 600px; height: 600px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(99,102,241,.18) 0%, transparent 70%);
-      top: -150px; left: -100px; animation: blobFloat 8s ease-in-out infinite;
-    }
-    .land-glow-2 {
-      position: absolute; width: 500px; height: 500px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(34,197,94,.12) 0%, transparent 70%);
-      bottom: -100px; right: -80px; animation: blobFloat 10s ease-in-out infinite reverse;
-    }
-    @keyframes blobFloat {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%      { transform: translate(30px,-30px) scale(1.08); }
-    }
-
-    .land-scan-ring {
-      position: absolute; border-radius: 50%;
-      border: 1px solid rgba(99,102,241,.2);
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      pointer-events: none;
-      animation: ringPulse 3s ease-in-out infinite;
-    }
-    .land-scan-ring:nth-child(3) { width:340px; height:340px; }
-    .land-scan-ring:nth-child(4) { width:500px; height:500px; animation-delay:.7s; border-color:rgba(99,102,241,.1); }
-    .land-scan-ring:nth-child(5) { width:660px; height:660px; animation-delay:1.4s; border-color:rgba(99,102,241,.05); }
-    @keyframes ringPulse {
-      0%,100% { opacity:1; transform:translate(-50%,-50%) scale(1); }
-      50%      { opacity:.3; transform:translate(-50%,-50%) scale(1.04); }
-    }
-
-    .land-content {
-      position: relative; z-index: 2;
+    .home-wrap {
       display: flex; flex-direction: column; align-items: center;
-      text-align: center; padding: 0 24px; max-width: 680px;
+      text-align: center; max-width: 600px; width: 100%;
     }
 
-    .land-badge {
+    .home-badge {
       display: inline-flex; align-items: center; gap: 7px;
       padding: 5px 14px; border-radius: 20px;
       border: 1px solid rgba(99,102,241,.35);
       background: rgba(99,102,241,.1);
       font-family: 'JetBrains Mono', monospace;
-      font-size: .63rem; letter-spacing: .14em;
+      font-size: .62rem; letter-spacing: .14em;
       color: #a5b4fc; text-transform: uppercase;
       margin-bottom: 28px;
-      animation: fadeSlideUp .6s ease both;
+      animation: fadeSlideUp .5s ease both;
     }
-    .land-badge-dot {
+    .home-badge-dot {
       width: 6px; height: 6px; border-radius: 50%;
       background: #22c55e; box-shadow: 0 0 6px #22c55e;
       animation: blink 1.5s infinite;
     }
 
-    .land-logo-wrap {
-      margin-bottom: 20px;
-      animation: fadeSlideUp .6s .1s ease both;
-    }
-    .land-logo-box {
-      width: 72px; height: 72px;
-      background: rgba(99,102,241,.12);
-      border: 1px solid rgba(99,102,241,.28);
-      border-radius: 20px;
+    .home-logo-box {
+      width: 80px; height: 80px;
+      background: rgba(99,102,241,.1);
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 22px;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto;
+      margin-bottom: 24px;
+      animation: fadeSlideUp .5s .08s ease both;
     }
 
-    .land-title {
+    .home-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(2.8rem, 9vw, 5.5rem);
+      font-size: clamp(2.6rem, 7vw, 4.2rem);
       font-weight: 800;
       letter-spacing: -.04em;
-      line-height: .92;
-      margin-bottom: 18px;
-      animation: fadeSlideUp .6s .2s ease both;
+      line-height: .95;
+      margin-bottom: 16px;
+      animation: fadeSlideUp .5s .16s ease both;
     }
-    .land-title .t-accent { color: #6366f1; }
-    .land-title .t-green  { color: #22c55e; }
+    .home-title .t-accent { color: #6366f1; }
 
-    .land-sub {
-      font-size: 1rem; color: #7070a0; line-height: 1.75;
-      max-width: 440px; margin-bottom: 36px;
-      animation: fadeSlideUp .6s .3s ease both;
+    .home-sub {
+      font-size: .95rem; color: #7070a0; line-height: 1.75;
+      max-width: 420px; margin-bottom: 36px;
+      animation: fadeSlideUp .5s .24s ease both;
     }
 
-    .land-pills {
+    .home-pills {
       display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
       margin-bottom: 40px;
-      animation: fadeSlideUp .6s .4s ease both;
+      animation: fadeSlideUp .5s .32s ease both;
     }
-    .land-pill {
+    .home-pill {
       display: flex; align-items: center; gap: 6px;
-      padding: 6px 13px; border-radius: 8px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      font-size: .75rem; color: #9090b8;
+      padding: 6px 14px; border-radius: 8px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.07);
+      font-size: .74rem; color: #9090b8;
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .land-cta {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 15px 34px; border-radius: 12px; border: none; cursor: pointer;
+    .home-actions {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      animation: fadeSlideUp .5s .4s ease both;
+    }
+    .home-btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 10px; border: none; cursor: pointer;
       background: linear-gradient(135deg, #6366f1, #4f52d4);
-      color: #fff; font-family: 'Syne', sans-serif;
-      font-size: .95rem; font-weight: 700; letter-spacing: .02em;
-      box-shadow: 0 8px 32px rgba(99,102,241,.4);
+      color: #fff; font-family: var(--sans);
+      font-size: .88rem; font-weight: 700;
+      box-shadow: 0 6px 24px rgba(99,102,241,.35);
       transition: transform .2s, box-shadow .2s;
-      animation: fadeSlideUp .6s .5s ease both;
     }
-    .land-cta:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(99,102,241,.55); }
-    .land-cta:active { transform: translateY(-1px); }
-    .land-arrow { transition: transform .2s; }
-    .land-cta:hover .land-arrow { transform: translateX(5px); }
+    .home-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(99,102,241,.5); }
+    .home-btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 10px; cursor: pointer;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.1);
+      color: #a0a0c0; font-family: var(--sans);
+      font-size: .88rem; font-weight: 600;
+      transition: border-color .2s, color .2s;
+    }
+    .home-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
-    .land-footer {
-      position: absolute; bottom: 22px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .58rem; color: #2a2a48; letter-spacing: .12em;
-      animation: fadeSlideUp .6s .7s ease both;
+    .home-divider {
+      width: 100%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
+      margin: 40px 0;
+      animation: fadeSlideUp .5s .48s ease both;
     }
+
+    .home-features {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      width: 100%;
+      animation: fadeSlideUp .5s .52s ease both;
+    }
+    .home-feat {
+      background: rgba(255,255,255,.025);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px; padding: 16px 14px; text-align: left;
+    }
+    .home-feat-icon { font-size: 1.4rem; margin-bottom: 8px; }
+    .home-feat-title { font-size: .82rem; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+    .home-feat-desc  { font-size: .72rem; color: var(--text-muted); line-height: 1.5; }
 
     @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(22px); }
+      from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* Clickable sidebar logo */
+    .sidebar-logo { cursor: pointer; }
+    .sidebar-logo:hover .logo-name { color: var(--accent); }
   </style>
 </head>
 <body>
 
-<!-- ══════════════ LANDING PAGE ══════════════ -->
-<div id="landingScreen">
-  <div class="land-grid"></div>
-  <div class="land-glow-1"></div>
-  <div class="land-glow-2"></div>
-  <div class="land-scan-ring"></div>
-  <div class="land-scan-ring"></div>
-  <div class="land-scan-ring"></div>
-
-  <div class="land-content">
-    <div class="land-badge">
-      <div class="land-badge-dot"></div>
-      AI-Powered · Real-Time · Cloud-Synced
-    </div>
-
-    <div class="land-logo-wrap">
-      <div class="land-logo-box">
-        <svg viewBox="0 0 48 48" fill="none" width="38" height="38">
-          <rect x="4" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
-          <rect x="28" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
-          <rect x="4" y="28" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
-          <circle cx="12" cy="12" r="3.5" fill="#6366f1"/>
-          <circle cx="36" cy="12" r="3.5" fill="#6366f1"/>
-          <circle cx="12" cy="36" r="3.5" fill="#6366f1"/>
-          <path d="M28 36 Q36 28 44 36" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-          <circle cx="36" cy="36" r="3.5" fill="#22c55e"/>
-        </svg>
-      </div>
-    </div>
-
-    <div class="land-title">
-      <span class="t-accent">Face</span> Track
-    </div>
-
-    <p class="land-sub">
-      Intelligent face recognition attendance system. Register once,
-      mark attendance automatically — across any device, from anywhere.
-    </p>
-
-    <div class="land-pills">
-      <div class="land-pill">⚡ Instant Recognition</div>
-      <div class="land-pill">☁️ Cloud Database</div>
-      <div class="land-pill">🔐 Branch Security</div>
-      <div class="land-pill">📊 Live Reports</div>
-      <div class="land-pill">📷 Auto Mark Present</div>
-    </div>
-
-    <button class="land-cta" onclick="launchApp()">
-      Launch System <span class="land-arrow">→</span>
-    </button>
-  </div>
-
-  <div class="land-footer">FACE TRACK · AI ATTENDANCE SYSTEM</div>
-</div>
-
-<!-- ══════════════ BOOT SCREEN ══════════════ -->
-<div id="bootScreen" style="display:none">
+<!-- BOOT -->
+<div id="bootScreen">
   <div class="boot-inner">
     <div class="boot-logo">
       <svg viewBox="0 0 48 48" fill="none" width="56" height="56">
@@ -333,7 +257,7 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sidebar-logo" onclick="goPage('dashboard')" style="cursor:pointer" title="Go to Dashboard>
+  <div class="sidebar-logo" onclick="goPage('home')" title="Home">
     <svg viewBox="0 0 36 36" fill="none" width="28" height="28">
       <rect x="2" y="2" width="13" height="13" rx="2.5" stroke="#6366f1" stroke-width="2"/>
       <rect x="21" y="2" width="13" height="13" rx="2.5" stroke="#6366f1" stroke-width="2"/>
@@ -349,7 +273,7 @@
 
   <nav class="nav-group">
     <div class="nav-label">OVERVIEW</div>
-    <button class="nav-btn active" data-page="dashboard">
+    <button class="nav-btn" data-page="dashboard">
       <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/></svg>
       Dashboard
     </button>
@@ -386,8 +310,79 @@
 <!-- MAIN -->
 <main class="main">
 
+<!-- HOME PAGE -->
+<div id="page-home">
+  <div class="home-wrap">
+
+    <div class="home-badge">
+      <div class="home-badge-dot"></div>
+      AI-Powered · Real-Time · Cloud-Synced
+    </div>
+
+    <div class="home-logo-box">
+      <svg viewBox="0 0 48 48" fill="none" width="42" height="42">
+        <rect x="4" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+        <rect x="28" y="4" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+        <rect x="4" y="28" width="16" height="16" rx="3" stroke="#6366f1" stroke-width="2.5"/>
+        <circle cx="12" cy="12" r="3.5" fill="#6366f1"/>
+        <circle cx="36" cy="12" r="3.5" fill="#6366f1"/>
+        <circle cx="12" cy="36" r="3.5" fill="#6366f1"/>
+        <path d="M28 36 Q36 28 44 36" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="36" cy="36" r="3.5" fill="#22c55e"/>
+      </svg>
+    </div>
+
+    <div class="home-title">
+      <span class="t-accent">Face</span> Track
+    </div>
+
+    <p class="home-sub">
+      Intelligent face recognition attendance system. Register once,
+      mark attendance automatically — across any device, from anywhere.
+    </p>
+
+    <div class="home-pills">
+      <div class="home-pill">⚡ Instant Recognition</div>
+      <div class="home-pill">☁️ Cloud Database</div>
+      <div class="home-pill">🔐 Branch Security</div>
+      <div class="home-pill">📊 Live Reports</div>
+      <div class="home-pill">📷 Auto Mark Present</div>
+    </div>
+
+    <div class="home-actions">
+      <button class="home-btn-primary" onclick="goPage('dashboard')">
+        📊 View Dashboard
+      </button>
+      <button class="home-btn-secondary" onclick="goPage('attend')">
+        📷 Mark Attendance
+      </button>
+    </div>
+
+    <div class="home-divider"></div>
+
+    <div class="home-features">
+      <div class="home-feat">
+        <div class="home-feat-icon">🎯</div>
+        <div class="home-feat-title">Auto Recognition</div>
+        <div class="home-feat-desc">Camera scans every 1.5s and marks students present instantly.</div>
+      </div>
+      <div class="home-feat">
+        <div class="home-feat-icon">🏫</div>
+        <div class="home-feat-title">Branch Isolation</div>
+        <div class="home-feat-desc">Each branch has its own password-protected portal and data.</div>
+      </div>
+      <div class="home-feat">
+        <div class="home-feat-icon">📋</div>
+        <div class="home-feat-title">Session Reports</div>
+        <div class="home-feat-desc">Full present/absent breakdown per session, exportable to CSV.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- DASHBOARD -->
-<div class="page active" id="page-dashboard">
+<div class="page" id="page-dashboard">
   <div class="page-head">
     <div><h2>Dashboard</h2><p class="page-sub" id="clockLine"></p></div>
     <button class="btn sm outline" onclick="goPage('attend')">+ Mark Attendance</button>
@@ -667,19 +662,5 @@
 <script src="js/recognize.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/app.js"></script>
-
-<script>
-  // Called when user clicks "Launch System" on landing page
-  function launchApp() {
-    const landing = document.getElementById('landingScreen');
-    const boot    = document.getElementById('bootScreen');
-    landing.classList.add('fade-out');
-    setTimeout(() => {
-      landing.style.display = 'none';
-      boot.style.display    = 'flex';
-      window._bootReady && window._bootReady();
-    }, 600);
-  }
-</script>
 </body>
 </html>
