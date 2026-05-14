@@ -336,21 +336,29 @@ const AttendPage = (() => {
     if (!semester) return showBanner('attBanner','error','⚠ Select a semester.');
     if (!subject)  return showBanner('attBanner','error','⚠ Enter the subject / class name.');
 
-    // Require branch password before a session can be started —
-    // prevents students from marking their own attendance.
-    Auth.requireLogin(branch, async () => {
-      const btn = document.getElementById('btnStartSession');
-      btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Starting…';
-      try {
-        const session = await Session.start(branch, semester, subject, timeSlot);
-        await Rec.setup(session);
-        hideBanner('attBanner');
-        _showActiveSession(session);
-        await Rec.startCamera();
-      } catch(err) {
-        showBanner('attBanner','error','✗ '+err.message);
-      } finally {
-        btn.disabled = false; btn.textContent = '▶ Start Session';
+    // Always verify the branch password — never rely on an existing portal
+    // login session, so students cannot start a session themselves.
+    _confirmWithPassword({
+      branch,
+      icon:     '🔐',
+      title:    'Start Attendance Session',
+      message:  `Enter the ${branch} password to begin marking attendance for Semester ${semester}.`,
+      btnLabel: 'Start Session',
+      btnClass: 'accent',
+      onConfirm: async () => {
+        const btn = document.getElementById('btnStartSession');
+        btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Starting…';
+        try {
+          const session = await Session.start(branch, semester, subject, timeSlot);
+          await Rec.setup(session);
+          hideBanner('attBanner');
+          _showActiveSession(session);
+          await Rec.startCamera();
+        } catch(err) {
+          showBanner('attBanner','error','✗ '+err.message);
+        } finally {
+          btn.disabled = false; btn.textContent = '▶ Start Session';
+        }
       }
     });
   }
