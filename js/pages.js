@@ -72,15 +72,60 @@ const BranchPortal = (() => {
     const box = document.getElementById('portalSessionList');
     if (!box) return;
     if (!sessions.length) { box.innerHTML = '<p class="empty">No sessions recorded yet.</p>'; return; }
+
     const allStudents = await DB.students.getAll();
-    box.innerHTML = sessions.map(s => {
-      const total = allStudents.filter(st => st.branch === _branch && String(st.semester) === String(s.semester)).length;
-      const present = s.totalPresent || 0;
-      const absent = s.totalAbsent || 0;
-      const pct = total > 0 ? Math.round(present / total * 100) : 0;
-      const barColor = pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
-      return '<div class="session-row '+(s.active?'session-row-live':'')+'" onclick="BranchPortal.viewSession('+s.id+')" style="position:relative"><div class="sr-left"><div class="sr-subject">'+s.subject+(s.active?' <span class="live-dot">●</span>':'')+'</div><div class="sr-meta">Sem '+s.semester+' · '+s.date+(s.timeSlot?' · <strong>'+s.timeSlot+'</strong>':'')+' · '+s.startTime+(s.endTime?'–'+s.endTime:' (ongoing)')+'</div></div><div class="sr-right"><div class="sr-counts"><span style="color:var(--green)">✓ '+present+'</span> <span style="color:var(--red)">✗ '+absent+'</span> <span style="color:var(--text-muted)">/ '+total+'</span></div><div class="sr-bar-wrap"><div class="sr-bar" style="width:'+pct+'%;background:'+barColor+'"></div></div><div class="sr-pct">'+pct+'%</div></div><div class="sr-arrow">›</div>'+'<button class="btn xs danger" style="margin-left:8px;flex-shrink:0" onclick="event.stopPropagation();BranchPortal.deleteSession('+s.id+')">🗑</button></div>';
-    }).join('');
+
+    // Group sessions by date, newest date first
+    const byDate = new Map();
+    for (const s of sessions) {
+      if (!byDate.has(s.date)) byDate.set(s.date, []);
+      byDate.get(s.date).push(s);
+    }
+    const sortedDates = [...byDate.keys()].sort((a, b) => b.localeCompare(a));
+
+    const today     = new Date().toLocaleDateString('en-CA');
+    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
+
+    function _dateLabel(d) {
+      if (d === today)     return { label: 'Today',     full: new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) };
+      if (d === yesterday) return { label: 'Yesterday', full: new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) };
+      return { label: new Date(d).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}), full: new Date(d).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) };
+    }
+
+    let html = '';
+    for (const date of sortedDates) {
+      const dateSessions = byDate.get(date);
+      const { label, full } = _dateLabel(date);
+      html += '<div class="session-date-group">';
+      html += '<div class="session-date-header">' +
+        '<span class="sdh-label">' + label + '</span>' +
+        '<span class="sdh-full">' + full + '</span>' +
+        '<span class="sdh-count">' + dateSessions.length + ' session' + (dateSessions.length !== 1 ? 's' : '') + '</span>' +
+        '</div>';
+
+      for (const s of dateSessions) {
+        const total    = allStudents.filter(st => st.branch === _branch && String(st.semester) === String(s.semester)).length;
+        const present  = s.totalPresent || 0;
+        const absent   = s.totalAbsent  || 0;
+        const pct      = total > 0 ? Math.round(present / total * 100) : 0;
+        const barColor = pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+        html += '<div class="session-row ' + (s.active ? 'session-row-live' : '') + '" onclick="BranchPortal.viewSession(' + s.id + ')" style="position:relative">' +
+          '<div class="sr-left">' +
+            '<div class="sr-subject">' + s.subject + (s.active ? ' <span class="live-dot">●</span>' : '') + '</div>' +
+            '<div class="sr-meta">Sem ' + s.semester + (s.timeSlot ? ' · <strong>' + s.timeSlot + '</strong>' : '') + ' · ' + s.startTime + (s.endTime ? '–' + s.endTime : ' (ongoing)') + '</div>' +
+          '</div>' +
+          '<div class="sr-right">' +
+            '<div class="sr-counts"><span style="color:var(--green)">✓ ' + present + '</span> <span style="color:var(--red)">✗ ' + absent + '</span> <span style="color:var(--text-muted)">/ ' + total + '</span></div>' +
+            '<div class="sr-bar-wrap"><div class="sr-bar" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
+            '<div class="sr-pct">' + pct + '%</div>' +
+          '</div>' +
+          '<div class="sr-arrow">›</div>' +
+          '<button class="btn xs danger" style="margin-left:8px;flex-shrink:0" onclick="event.stopPropagation();BranchPortal.deleteSession(' + s.id + ')">🗑</button>' +
+        '</div>';
+      }
+      html += '</div>';
+    }
+    box.innerHTML = html;
   }
 
   async function viewSession(sessionId) {
@@ -282,26 +327,32 @@ const AttendPage = (() => {
   }
 
   async function startSession() {
-    const branch = document.getElementById('attBranch')?.value;
+    const branch   = document.getElementById('attBranch')?.value;
     const semester = document.getElementById('attSemester')?.value;
-    const subject = document.getElementById('attSubject')?.value?.trim();
+    const subject  = document.getElementById('attSubject')?.value?.trim();
     const timeSlot = document.getElementById('attTimeSlot')?.value?.trim() || '';
+
     if (!branch)   return showBanner('attBanner','error','⚠ Select a branch.');
     if (!semester) return showBanner('attBanner','error','⚠ Select a semester.');
     if (!subject)  return showBanner('attBanner','error','⚠ Enter the subject / class name.');
-    const btn = document.getElementById('btnStartSession');
-    btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Starting…';
-    try {
-      const session = await Session.start(branch, semester, subject, timeSlot);
-      await Rec.setup(session);
-      hideBanner('attBanner');
-      _showActiveSession(session);
-      await Rec.startCamera();
-    } catch(err) {
-      showBanner('attBanner','error','✗ '+err.message);
-    } finally {
-      btn.disabled = false; btn.textContent = '▶ Start Session';
-    }
+
+    // Require branch password before a session can be started —
+    // prevents students from marking their own attendance.
+    Auth.requireLogin(branch, async () => {
+      const btn = document.getElementById('btnStartSession');
+      btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Starting…';
+      try {
+        const session = await Session.start(branch, semester, subject, timeSlot);
+        await Rec.setup(session);
+        hideBanner('attBanner');
+        _showActiveSession(session);
+        await Rec.startCamera();
+      } catch(err) {
+        showBanner('attBanner','error','✗ '+err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '▶ Start Session';
+      }
+    });
   }
 
   function _showActiveSession(session) {
